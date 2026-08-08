@@ -1,4 +1,3 @@
-
 import streamlit as st
 import sqlite3
 import pandas as pd
@@ -40,7 +39,7 @@ menu_items = {
 st.set_page_config(page_title="Sistema Pro", layout="wide")
 st.title("🍔 Sistema de Gestión - Restaurante")
 
-tab1, tab2, tab3 = st.tabs(["🛒 Registrar Venta", "📊 Dashboard KPI", "🗑️ Eliminar Venta"])
+tab1, tab2 = st.tabs(["🛒 Registrar Venta", "📊 Dashboard y Gestión"])
 
 with tab1:
     st.subheader("Registro de Pedidos")
@@ -61,7 +60,7 @@ with tab1:
         st.success("¡Pedido registrado exitosamente!")
 
 with tab2:
-    st.subheader("Dashboard")
+    st.subheader("Dashboard y Control")
     conn = sqlite3.connect(DB_NAME)
     df = pd.read_sql("SELECT * FROM ventas", conn)
     conn.close()
@@ -73,23 +72,23 @@ with tab2:
         col3.metric("Promedio", f"{df['total'].mean():.2f} BS")
         
         st.divider()
-        # use_container_width=True fija el gráfico y evita el movimiento en móviles
         st.write("### 📈 Ventas por Categoría")
         cat_df = df.groupby('categoria')['total'].sum()
         st.bar_chart(cat_df, use_container_width=True)
             
-        st.write("### 📋 Historial")
+        st.write("### 📋 Historial y Gestión")
         st.dataframe(df.sort_values(by='fecha', ascending=False), use_container_width=True)
+        
+        # Eliminar dentro del mismo dashboard
+        st.divider()
+        st.write("#### 🗑️ Eliminar una Venta")
+        id_eliminar = st.number_input("Escribe el ID de la venta a eliminar:", min_value=1, step=1)
+        if st.button("Confirmar Eliminación"):
+            conn = sqlite3.connect(DB_NAME)
+            c = conn.cursor()
+            c.execute("DELETE FROM ventas WHERE id = ?", (id_eliminar,))
+            conn.commit()
+            conn.close()
+            st.rerun() # Recargar la página para ver cambios al instante
     else:
         st.info("No hay ventas registradas.")
-
-with tab3:
-    st.subheader("Eliminar Venta")
-    id_a_eliminar = st.number_input("ID de la venta a eliminar", min_value=1, step=1)
-    if st.button("Eliminar"):
-        conn = sqlite3.connect(DB_NAME)
-        c = conn.cursor()
-        c.execute("DELETE FROM ventas WHERE id = ?", (id_a_eliminar,))
-        conn.commit()
-        conn.close()
-        st.success(f"Venta ID {id_a_eliminar} eliminada correctamente.")
