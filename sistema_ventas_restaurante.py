@@ -2,9 +2,11 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 from datetime import datetime, timedelta
+import os
 
 # --- CONFIGURACIÓN ---
 DB_NAME = "restaurante_ventas.db"
+
 def get_hora_bolivia():
     return datetime.utcnow() - timedelta(hours=4)
 
@@ -57,13 +59,17 @@ with tab1:
                   (get_hora_bolivia(), producto, categoria, cantidad, precio, total))
         conn.commit()
         conn.close()
-        st.success("¡Pedido registrado exitosamente!")
+        st.success("¡Pedido registrado exitosamente y guardado en la base de datos!")
 
 with tab2:
     st.subheader("Dashboard y Control")
-    conn = sqlite3.connect(DB_NAME)
-    df = pd.read_sql("SELECT * FROM ventas", conn)
-    conn.close()
+    
+    if os.path.exists(DB_NAME):
+        conn = sqlite3.connect(DB_NAME)
+        df = pd.read_sql("SELECT * FROM ventas", conn)
+        conn.close()
+    else:
+        df = pd.DataFrame()
     
     if not df.empty:
         col1, col2, col3 = st.columns(3)
@@ -89,6 +95,7 @@ with tab2:
             c.execute("DELETE FROM ventas WHERE id = ?", (id_eliminar,))
             conn.commit()
             conn.close()
-            st.rerun() # Recargar la página para ver cambios al instante
+            st.success(f"Venta ID {id_eliminar} eliminada correctamente.")
+            st.rerun()
     else:
         st.info("No hay ventas registradas.")
