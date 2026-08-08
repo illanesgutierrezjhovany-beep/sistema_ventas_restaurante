@@ -39,7 +39,7 @@ menu_items = {
 
 # --- INTERFAZ ---
 st.set_page_config(page_title="Sistema Pro", layout="wide")
-st.title("🍔 Sistema de Gestión - Restaurante")
+st.title("🍔 Sistema de Gestión - Restaurante (Sin Internet)")
 
 tab1, tab2 = st.tabs(["🛒 Registrar Venta", "📊 Dashboard y Gestión"])
 
@@ -56,10 +56,10 @@ with tab1:
         conn = sqlite3.connect(DB_NAME)
         c = conn.cursor()
         c.execute("INSERT INTO ventas (fecha, producto, categoria, cantidad, precio_unitario, total) VALUES (?,?,?,?,?,?)",
-                  (get_hora_bolivia(), producto, categoria, cantidad, precio, total))
+                  (get_hora_bolivia().strftime("%Y-%m-%d %H:%M:%S"), producto, categoria, cantidad, precio, total))
         conn.commit()
         conn.close()
-        st.success("¡Pedido registrado exitosamente y guardado en la base de datos!")
+        st.success("¡Pedido registrado exitosamente y guardado localmente!")
 
 with tab2:
     st.subheader("Dashboard y Control")
@@ -80,7 +80,7 @@ with tab2:
         st.divider()
         st.write("### 📈 Ventas por Categoría")
         cat_df = df.groupby('categoria')['total'].sum()
-        st.bar_chart(cat_df, use_container_width=True)
+        st.bar_chart(cat_df)
             
         st.write("### 📋 Historial y Gestión")
         st.dataframe(df.sort_values(by='fecha', ascending=False), use_container_width=True)
