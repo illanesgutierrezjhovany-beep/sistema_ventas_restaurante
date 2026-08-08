@@ -1,10 +1,12 @@
 import streamlit as st
 import sqlite3
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 
-# --- CONFIGURACIÓN DE DB ---
+# --- CONFIGURACIÓN DE DB Y HORA BOLIVIA ---
 DB_NAME = "restaurante_ventas.db"
+def get_hora_bolivia():
+    return datetime.utcnow() - timedelta(hours=4)
 
 def init_db():
     conn = sqlite3.connect(DB_NAME)
@@ -22,7 +24,7 @@ def init_db():
 
 init_db()
 
-# --- MENÚ Y CATEGORÍAS ---
+# --- MENÚ ---
 menu_items = {
     "Pollo a la Canasta": {"precio": 35.0, "categoria": "Pollo"},
     "Alitas Barbacoa": {"precio": 30.0, "categoria": "Alitas"},
@@ -37,14 +39,12 @@ menu_items = {
 st.set_page_config(page_title="Sistema Pro", layout="wide")
 st.title("🍔 Sistema de Gestión - Restaurante")
 
-tab1, tab2 = st.tabs(["🛒 Registrar Venta", "📊 Dashboard KPI"])
+tab1, tab2, tab3 = st.tabs(["🛒 Registrar Venta", "📊 Dashboard KPI", "🗑️ Eliminar Venta"])
 
 with tab1:
     st.subheader("Registro de Pedidos")
-    col1, col2 = st.columns(2)
-    with col1:
-        producto = st.selectbox("Producto", list(menu_items.keys()))
-        cantidad = st.number_input("Cantidad", min_value=1, value=1)
+    producto = st.selectbox("Producto", list(menu_items.keys()))
+    cantidad = st.number_input("Cantidad", min_value=1, value=1)
     
     precio = menu_items[producto]["precio"]
     categoria = menu_items[producto]["categoria"]
@@ -54,7 +54,7 @@ with tab1:
         conn = sqlite3.connect(DB_NAME)
         c = conn.cursor()
         c.execute("INSERT INTO ventas (fecha, producto, categoria, cantidad, precio_unitario, total) VALUES (?,?,?,?,?,?)",
-                  (datetime.now(), producto, categoria, cantidad, precio, total))
+                  (get_hora_bolivia(), producto, categoria, cantidad, precio, total))
         conn.commit()
         conn.close()
         st.success("¡Pedido registrado exitosamente!")
@@ -69,14 +69,18 @@ with tab2:
         col1, col2, col3 = st.columns(3)
         col1.metric("Total Ingresos", f"{df['total'].sum():.2f} BS")
         col2.metric("Total Ventas", len(df))
-        col3.metric("Ticket Promedio", f"{df['total'].mean():.2f} BS")
-        
-        st.write("### Ventas por Categoría")
-        cat_df = df.groupby('categoria')['total'].sum()
-        st.bar_chart(cat_df)
-        
-        st.write("### Historial Detallado")
         st.dataframe(df)
     else:
-        st.info("No hay ventas registradas aún.")
-        
+        st.info("No hay ventas.")
+
+with tab3:
+    st.subheader("Eliminar Venta Mal Registrada")
+    st.warning("Escribe el ID de la venta que deseas eliminar (lo encuentras en el Historial):")
+    id_a_eliminar = st.number_input("ID de la venta", min_value=1, step=1)
+    if st.button("Eliminar"):
+        conn = sqlite3.connect(DB_NAME)
+        c = conn.cursor()
+        c.execute("DELETE FROM ventas WHERE id = ?", (id_a_eliminar,))
+        conn.commit()
+        conn.close()
+        st.success(f"Venta ID {id_a_eliminar} eliminada correctamente.")
