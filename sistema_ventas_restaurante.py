@@ -1,9 +1,10 @@
+
 import streamlit as st
 import sqlite3
 import pandas as pd
 from datetime import datetime, timedelta
 
-# --- CONFIGURACIÓN DE DB Y HORA BOLIVIA ---
+# --- CONFIGURACIÓN ---
 DB_NAME = "restaurante_ventas.db"
 def get_hora_bolivia():
     return datetime.utcnow() - timedelta(hours=4)
@@ -60,23 +61,31 @@ with tab1:
         st.success("¡Pedido registrado exitosamente!")
 
 with tab2:
-    st.subheader("Dashboard de Ventas")
+    st.subheader("Dashboard")
     conn = sqlite3.connect(DB_NAME)
     df = pd.read_sql("SELECT * FROM ventas", conn)
     conn.close()
     
     if not df.empty:
         col1, col2, col3 = st.columns(3)
-        col1.metric("Total Ingresos", f"{df['total'].sum():.2f} BS")
-        col2.metric("Total Ventas", len(df))
-        st.dataframe(df)
+        col1.metric("Ingresos", f"{df['total'].sum():.2f} BS")
+        col2.metric("Pedidos", len(df))
+        col3.metric("Promedio", f"{df['total'].mean():.2f} BS")
+        
+        st.divider()
+        # use_container_width=True fija el gráfico y evita el movimiento en móviles
+        st.write("### 📈 Ventas por Categoría")
+        cat_df = df.groupby('categoria')['total'].sum()
+        st.bar_chart(cat_df, use_container_width=True)
+            
+        st.write("### 📋 Historial")
+        st.dataframe(df.sort_values(by='fecha', ascending=False), use_container_width=True)
     else:
-        st.info("No hay ventas.")
+        st.info("No hay ventas registradas.")
 
 with tab3:
-    st.subheader("Eliminar Venta Mal Registrada")
-    st.warning("Escribe el ID de la venta que deseas eliminar (lo encuentras en el Historial):")
-    id_a_eliminar = st.number_input("ID de la venta", min_value=1, step=1)
+    st.subheader("Eliminar Venta")
+    id_a_eliminar = st.number_input("ID de la venta a eliminar", min_value=1, step=1)
     if st.button("Eliminar"):
         conn = sqlite3.connect(DB_NAME)
         c = conn.cursor()
