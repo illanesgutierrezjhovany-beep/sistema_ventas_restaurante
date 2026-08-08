@@ -39,7 +39,7 @@ menu_items = {
 
 # --- INTERFAZ ---
 st.set_page_config(page_title="Sistema Pro", layout="wide")
-st.title("🍔 Sistema de Gestión - Restaurante (Sin Internet)")
+st.title("🍔 Sistema de Gestión - Restaurante")
 
 tab1, tab2 = st.tabs(["🛒 Registrar Venta", "📊 Dashboard y Gestión"])
 
@@ -85,7 +85,6 @@ with tab2:
         st.write("### 📋 Historial y Gestión")
         st.dataframe(df.sort_values(by='fecha', ascending=False), use_container_width=True)
         
-        # Eliminar dentro del mismo dashboard
         st.divider()
         st.write("#### 🗑️ Eliminar una Venta")
         id_eliminar = st.number_input("Escribe el ID de la venta a eliminar:", min_value=1, step=1)
